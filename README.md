@@ -1,5 +1,5 @@
-# faststartup_go
-fast startup of go project
+# basego
+Fast startup of golang project.
 
 ## include
 - 日志
