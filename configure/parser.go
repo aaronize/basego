@@ -17,7 +17,7 @@ func NewConfigParser(path string, format string) *ConfigParser {
 	}
 }
 
-func (cp *ConfigParser) Parser(target interface{}) error {
+func (cp *ConfigParser) Parse(target interface{}) error {
 	if strings.Trim(cp.path, " ") == "" {
 		return &ConfigParseError{EmptyConfigPath}
 	}

@@ -9,7 +9,7 @@ func TestParser(t *testing.T) {
 	config := &struct {}{}
 	cp := NewConfigParser("", "json")
 
-	if err := cp.Parser(config); err != nil {
+	if err := cp.Parse(config); err != nil {
 		log.Fatal(err.Error())
 	}
 }
