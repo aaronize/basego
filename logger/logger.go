@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"encoding/json"
 	"errors"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -13,7 +14,7 @@ var (
 	zapInfoLogger *zap.Logger
 )
 
-type LoggerConfig struct {
+type Options struct {
 	ErrLog	 		string
 	InfoLog 		string
 	MaxSize 		int
@@ -23,7 +24,7 @@ type LoggerConfig struct {
 	LocalTime 		bool
 }
 
-func (lc *LoggerConfig) InitLogger() error {
+func (lc *Options) InitLogger() error {
 	if strings.Trim(lc.ErrLog, " ") == "" || strings.Trim(lc.InfoLog, " ") == "" {
 		return errors.New("plz specify logger path")
 	}
@@ -37,7 +38,7 @@ func (lc *LoggerConfig) InitLogger() error {
 	return nil
 }
 
-func (lc *LoggerConfig) newLogger(path string) *zap.Logger {
+func (lc *Options) newLogger(path string) *zap.Logger {
 	w := zapcore.AddSync(&lumberjack.Logger{
 		Filename: path,
 		MaxSize: lc.MaxSize,
@@ -77,67 +78,108 @@ func (lc *LoggerConfig) newLogger(path string) *zap.Logger {
 	return zap.New(core)
 }
 
-func Debug(brief string, detail string, mps ...map[string]string) {
+func Debug(brief string, detail string, mps ...map[string]interface{}) {
 	var fields = make([]zap.Field, 0)
 	fields = append(fields, zap.String("detail", detail))
 
 	for _, mp := range mps {
 		for k, v := range mp {
-			fields = append(fields, zap.String(k, v))
+			fields = appendFields(fields, k, v)
 		}
 	}
 
 	zapInfoLogger.Debug(brief, fields...)
 }
 
-func Info(brief string, detail string, mps ...map[string]string) {
+func Info(brief string, detail string, mps ...map[string]interface{}) {
 	var fields = make([]zap.Field, 0)
 	fields = append(fields, zap.String("detail", detail))
 
 	for _, mp := range mps {
 		for k, v := range mp {
-			fields = append(fields, zap.String(k, v))
+			fields = appendFields(fields, k, v)
 		}
 	}
 
 	zapInfoLogger.Info(brief, fields...)
 }
 
-func Warn(brief string, detail string, mps ...map[string]string) {
+func Warn(brief string, detail string, mps ...map[string]interface{}) {
 	var fields = make([]zap.Field, 0)
 	fields = append(fields, zap.String("detail", detail))
 
 	for _, mp := range mps {
 		for k, v := range mp {
-			fields = append(fields, zap.String(k, v))
+			fields = appendFields(fields, k, v)
 		}
 	}
 
 	zapInfoLogger.Warn(brief, fields...)
 }
 
-func Error(brief string, detail string, mps ...map[string]string) {
+func Error(brief string, detail string, mps ...map[string]interface{}) {
 	var fields = make([]zap.Field, 0)
 	fields = append(fields, zap.String("detail", detail))
 
 	for _, mp := range mps {
 		for k, v := range mp {
-			fields = append(fields, zap.String(k, v))
+			fields = appendFields(fields, k, v)
 		}
 	}
 
 	zapLogger.Error(brief, fields...)
 }
 
-func Fatal(brief string, detail string, mps ...map[string]string) {
+func Fatal(brief string, detail string, mps ...map[string]interface{}) {
 	var fields = make([]zap.Field, 0)
 	fields = append(fields, zap.String("detail", detail))
 
 	for _, mp := range mps {
 		for k, v := range mp {
-			fields = append(fields, zap.String(k, v))
+			fields = appendFields(fields, k, v)
 		}
 	}
 
 	zapLogger.Fatal(brief, fields...)
+}
+
+func appendFields(fields []zap.Field, k string, v interface{}) []zap.Field {
+
+	switch v.(type) {
+	case string:
+		fields = append(fields, zap.String(k, v.(string)))
+	case int:
+		fields = append(fields, zap.Int(k, v.(int)))
+	case int8:
+		fields = append(fields, zap.Int8(k, v.(int8)))
+	case int16:
+		fields = append(fields, zap.Int16(k, v.(int16)))
+	case int32:
+		fields = append(fields, zap.Int32(k, v.(int32)))
+	case int64:
+		fields = append(fields, zap.Int64(k, v.(int64)))
+	case uint:
+		fields = append(fields, zap.Uint(k, v.(uint)))
+	case uint8:
+		fields = append(fields, zap.Uint8(k, v.(uint8)))
+	case uint16:
+		fields = append(fields, zap.Uint16(k, v.(uint16)))
+	case uint32:
+		fields = append(fields, zap.Uint32(k, v.(uint32)))
+	case uint64:
+		fields = append(fields, zap.Uint64(k, v.(uint64)))
+	case float32:
+		fields = append(fields, zap.Float32(k, v.(float32)))
+	case float64:
+		fields = append(fields, zap.Float64(k, v.(float64)))
+	case bool:
+		fields = append(fields, zap.Bool(k, v.(bool)))
+	case []byte:
+		fields = append(fields, zap.Binary(k, v.([]byte)))
+	default:
+		bt, _ := json.Marshal(v)
+		fields = append(fields, zap.String(k, string(bt)))
+	}
+
+	return fields
 }
