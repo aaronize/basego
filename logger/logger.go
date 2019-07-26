@@ -6,6 +6,8 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
+	"path/filepath"
+	"runtime"
 	"strings"
 )
 
@@ -79,8 +81,7 @@ func (lc *Options) newLogger(path string) *zap.Logger {
 }
 
 func Debug(brief string, detail string, mps ...map[string]interface{}) {
-	var fields = make([]zap.Field, 0)
-	fields = append(fields, zap.String("detail", detail))
+	fields := baseFields(detail)
 
 	for _, mp := range mps {
 		for k, v := range mp {
@@ -92,8 +93,7 @@ func Debug(brief string, detail string, mps ...map[string]interface{}) {
 }
 
 func Info(brief string, detail string, mps ...map[string]interface{}) {
-	var fields = make([]zap.Field, 0)
-	fields = append(fields, zap.String("detail", detail))
+	fields := baseFields(detail)
 
 	for _, mp := range mps {
 		for k, v := range mp {
@@ -105,8 +105,7 @@ func Info(brief string, detail string, mps ...map[string]interface{}) {
 }
 
 func Warn(brief string, detail string, mps ...map[string]interface{}) {
-	var fields = make([]zap.Field, 0)
-	fields = append(fields, zap.String("detail", detail))
+	fields := baseFields(detail)
 
 	for _, mp := range mps {
 		for k, v := range mp {
@@ -118,8 +117,7 @@ func Warn(brief string, detail string, mps ...map[string]interface{}) {
 }
 
 func Error(brief string, detail string, mps ...map[string]interface{}) {
-	var fields = make([]zap.Field, 0)
-	fields = append(fields, zap.String("detail", detail))
+	fields := baseFields(detail)
 
 	for _, mp := range mps {
 		for k, v := range mp {
@@ -131,8 +129,7 @@ func Error(brief string, detail string, mps ...map[string]interface{}) {
 }
 
 func Fatal(brief string, detail string, mps ...map[string]interface{}) {
-	var fields = make([]zap.Field, 0)
-	fields = append(fields, zap.String("detail", detail))
+	fields := baseFields(detail)
 
 	for _, mp := range mps {
 		for k, v := range mp {
@@ -180,6 +177,24 @@ func appendFields(fields []zap.Field, k string, v interface{}) []zap.Field {
 		bt, _ := json.Marshal(v)
 		fields = append(fields, zap.String(k, string(bt)))
 	}
+
+	return fields
+}
+
+func baseFields(detail string) []zap.Field {
+	var fields = make([]zap.Field, 0)
+	fields = append(fields, zap.String("detail", detail))
+
+	fileName, line, funcName := "???", 0, "???"
+	pc, fileName, line, ok := runtime.Caller(2)
+	if ok {
+		//funcName = strings.TrimPrefix(filepath.Ext(runtime.FuncForPC(pc).Name()), ".")
+		funcName = runtime.FuncForPC(pc).Name()
+		fileName = filepath.Base(fileName)
+	}
+	fields = append(fields, zap.String("file", fileName))
+	fields = append(fields, zap.String("caller", funcName))
+	fields = append(fields, zap.Int("line", line))
 
 	return fields
 }
